@@ -26,6 +26,17 @@ const thisIsAdultContent = scan("https://onlyfans.com");
 console.log(thisIsAdultContent); // true
 ```
 
+## Options
+
+```ts
+const options: ScanOptions = {
+	followRedirects: true,
+	botDetection: "links", // ignore, links, always
+	customDomains: [],
+	errors: "ignore", // ignore, log, throw
+};
+```
+
 ## Tests
 
 ```bash
