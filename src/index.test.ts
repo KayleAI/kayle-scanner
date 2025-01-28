@@ -32,9 +32,19 @@ describe("scan google", () => {
 		expect(await scan(input)).toBe(expected);
 	});
 
-	test("beacons with no adult content", async () => {
+	test("beacons gets blocked by bot detection", async () => {
 		const input = "https://beacons.ai/digitallymeena";
 		const expected = false;
+		expect(
+			await scan(input, {
+				botDetection: "ignore",
+			}),
+		).toBe(expected);
+	});
+
+	test("unrulyagency.be", async () => {
+		const input = "https://unrulyagency.be/soapyshayna";
+		const expected = true;
 		expect(await scan(input)).toBe(expected);
 	});
 });

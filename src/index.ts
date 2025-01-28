@@ -29,10 +29,29 @@ const linkShorteners = new Set([
 	"linktree.com",
 	"linkin.bio",
 	"link.bio",
+	"unrulyagency.be",
+	"hoo.be",
 ]);
 
 function getDomain(url: URL) {
 	return url.hostname.split(".").slice(-2).join(".");
+}
+
+function handleBotCheck(page: string, url: URL, options: ScanOptions): boolean {
+	if (!page.includes("Just a moment")) return false;
+
+	if (options.botDetection === "ignore") return false;
+	if (options.botDetection === "links")
+		return linkShorteners.has(getDomain(url));
+	if (options.botDetection === "always") return true;
+
+	throw new Error("Unknown bot detection option");
+}
+
+function handleError(error: Error, options: ScanOptions) {
+	if (options.errors === "ignore") return;
+	if (options.errors === "log") console.error(error);
+	if (options.errors === "throw") throw error;
 }
 
 /**
@@ -51,14 +70,8 @@ async function scrape(url: URL, options: ScanOptions = defaultOptions) {
 
 	const page = await response.text();
 
-	if (page.includes("Just a moment")) {
-		// we've been stopped by a bot detection service
-		if (linkShorteners.has(getDomain(url))) {
-			return true;
-		}
-
-		return false;
-	}
+	const botCheck = handleBotCheck(page, url, options);
+	if (botCheck !== false) return true;
 
 	const urlPattern =
 		/(?:https?:\/\/[^\s"'<>]+|href=["']?(https?:\/\/[^"'\s>]+))/gi;
@@ -76,8 +89,8 @@ async function scrape(url: URL, options: ScanOptions = defaultOptions) {
 			if (adultDomains.has(domain)) {
 				return true;
 			}
-		} catch {
-			console.warn(`Error processing link: ${link}`);
+		} catch (error) {
+			handleError(error as Error, options);
 		}
 	}
 
@@ -86,6 +99,9 @@ async function scrape(url: URL, options: ScanOptions = defaultOptions) {
 
 const defaultOptions: ScanOptions = {
 	followRedirects: true,
+	botDetection: "links",
+	customDomains: [],
+	errors: "ignore",
 };
 
 /**
